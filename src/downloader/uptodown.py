@@ -1,4 +1,5 @@
 """Upto Down Downloader."""
+
 from typing import Any, Self
 
 from bs4 import BeautifulSoup, Tag
@@ -7,7 +8,7 @@ from loguru import logger
 from src.app import APP
 from src.downloader.download import Downloader
 from src.exceptions import UptoDownAPKDownloadError
-from src.utils import bs4_parser, handle_request_response, request_header, start_request
+from src.utils import bs4_parser, handle_request_response, make_request, request_header
 
 
 class UptoDown(Downloader):
@@ -15,18 +16,16 @@ class UptoDown(Downloader):
 
     def extract_download_link(self: Self, page: str, app: str) -> tuple[str, str]:
         """Extract download link from uptodown url."""
-        r = start_request(page, headers=request_header)
+        r = make_request(page, headers=request_header)
         handle_request_response(r, page)
-        download_page_url = page.replace("/download", "/post-download")
-        download_page_html = start_request(download_page_url, headers=request_header).text
-        soup = BeautifulSoup(download_page_html, bs4_parser)
-        post_download = soup.find("div", class_="post-download")
+        soup = BeautifulSoup(r.text, bs4_parser)
+        detail_download_button = soup.find("button", id="detail-download-button")
 
-        if not isinstance(post_download, Tag):
+        if not isinstance(detail_download_button, Tag):
             msg = f"Unable to download {app} from uptodown."
             raise UptoDownAPKDownloadError(msg, url=page)
 
-        data_url = post_download.get("data-url")
+        data_url = detail_download_button.get("data-url")
         download_url = f"https://dw.uptodown.com/dwn/{data_url}"
         file_name = f"{app}.apk"
         self._download(download_url, file_name)
@@ -42,7 +41,7 @@ class UptoDown(Downloader):
         """
         logger.debug("downloading specified version of app from uptodown.")
         url = f"{app.download_source}/versions"
-        html = start_request(url, headers=request_header).text
+        html = make_request(url, headers=request_header).text
         soup = BeautifulSoup(html, bs4_parser)
         detail_app_name = soup.find("h1", id="detail-app-name")
 
@@ -57,7 +56,7 @@ class UptoDown(Downloader):
 
         while not version_found:
             version_url = f"{app.download_source}/apps/{app_code}/versions/{version_page}"
-            r = start_request(version_url, headers=request_header)
+            r = make_request(version_url, headers=request_header)
             handle_request_response(r, version_url)
             json = r.json()
 

@@ -1,4 +1,5 @@
 """Downloader Class."""
+
 import os
 import subprocess
 from pathlib import Path
@@ -11,9 +12,8 @@ from tqdm import tqdm
 
 from src.app import APP
 from src.config import RevancedConfig
-from src.downloader.utils import implement_method
 from src.exceptions import DownloadError
-from src.utils import handle_request_response, session
+from src.utils import handle_request_response, implement_method, session
 
 
 class Downloader(object):
@@ -39,11 +39,7 @@ class Downloader(object):
         if self.config.personal_access_token and "github" in url:
             logger.debug("Using personal access token")
             headers["Authorization"] = f"token {self.config.personal_access_token}"
-        response = session.get(
-            url,
-            stream=True,
-            headers=headers,
-        )
+        response = session.get(url, headers=headers, stream=True)
         handle_request_response(response, url)
         total = int(response.headers.get("content-length", 0))
         bar = tqdm(

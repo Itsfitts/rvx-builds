@@ -1,4 +1,5 @@
 """Possible Exceptions."""
+
 from typing import Any, Self
 
 
@@ -31,6 +32,11 @@ class ScrapingError(BuilderError):
         """
         super().__init__(*args)
         self.url = kwargs.get("url", None)
+
+    def __str__(self: Self) -> str:
+        """Exception message."""
+        base_message = super().__str__()
+        return f"Message - {base_message} Url - {self.url}"
 
 
 class APKMirrorIconScrapError(ScrapingError):
